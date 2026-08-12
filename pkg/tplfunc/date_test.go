@@ -67,6 +67,51 @@ func TestFormatDate(t *testing.T) {
 	}
 }
 
+func TestFormatDateWithInt64Data(t *testing.T) {
+	time.Local = time.UTC
+
+	tests := []struct {
+		name     string
+		template string
+		data     any
+		want     string
+	}{
+		{
+			name:     "default format",
+			template: `{{ formatDate .Unix }}`,
+			data:     struct{ Unix int64 }{Unix: 1000000000},
+			want:     "20010909014640",
+		},
+		{
+			name:     "custom format",
+			template: `{{ formatDate .Unix .Format }}`,
+			data: struct {
+				Unix   int64
+				Format string
+			}{Unix: 1000000000, Format: "2006-01-02 15:04:05"},
+			want: "2001-09-09 01:46:40",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := strings.Builder{}
+			err := template.Must(template.New("test").
+				Funcs(FuncMap(FormatDate())).
+				Parse(tt.template)).
+				Execute(&b, tt.data)
+			if err != nil {
+				t.Errorf("formatDate() error = %v", err)
+				return
+			}
+
+			if b.String() != tt.want {
+				t.Errorf("formatDate() got = %v, want %v", b.String(), tt.want)
+			}
+		})
+	}
+}
+
 func TestCustomFormat(t *testing.T) {
 	// unify time zone
 	time.Local = time.UTC
