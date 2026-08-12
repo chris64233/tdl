@@ -107,3 +107,38 @@ func TestCustomFormat(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatDateAcceptsCommonTemplateValues(t *testing.T) {
+	// unify time zone
+	time.Local = time.UTC
+
+	tests := []struct {
+		name string
+		data any
+		tmpl string
+		want string
+	}{
+		{name: "int64", data: map[string]int64{"Unix": 1000000000}, tmpl: `{{ formatDate .Unix }}`, want: "20010909014640"},
+		{name: "float64", data: map[string]float64{"Unix": 1000000000}, tmpl: `{{ formatDate .Unix }}`, want: "20010909014640"},
+		{name: "string", data: map[string]string{"Unix": "1000000000"}, tmpl: `{{ formatDate .Unix }}`, want: "20010909014640"},
+		{name: "custom format", data: map[string]int64{"Unix": 1}, tmpl: `{{ formatDate .Unix "2006-01-02 15:04:05" }}`, want: "1970-01-01 00:00:01"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := strings.Builder{}
+
+			err := template.Must(template.New("test").
+				Funcs(FuncMap(FormatDate())).
+				Parse(tt.tmpl)).
+				Execute(&b, tt.data)
+			if err != nil {
+				t.Fatalf("formatDate() error = %v", err)
+			}
+
+			if b.String() != tt.want {
+				t.Fatalf("formatDate() got = %v, want %v", b.String(), tt.want)
+			}
+		})
+	}
+}
