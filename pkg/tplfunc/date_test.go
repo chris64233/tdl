@@ -107,3 +107,28 @@ func TestCustomFormat(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatDateAcceptsTemplateInt64Value(t *testing.T) {
+	// unify time zone
+	time.Local = time.UTC
+
+	data := struct {
+		Unix int64
+	}{
+		Unix: 1000000000,
+	}
+
+	b := strings.Builder{}
+	err := template.Must(template.New("test").
+		Funcs(FuncMap(FormatDate())).
+		Parse(`{{ formatDate .Unix }}`)).
+		Execute(&b, data)
+	if err != nil {
+		t.Errorf("formatDate() error = %v", err)
+		return
+	}
+
+	if b.String() != "20010909014640" {
+		t.Errorf("formatDate() got = %v, want %v", b.String(), "20010909014640")
+	}
+}
